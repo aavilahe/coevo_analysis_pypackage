@@ -10,15 +10,18 @@ import coevo.inputformats as cf
 
 fn1 = 'test.mfDCA'
 fn2 = 'test.infCalc'
+fn3 = 'test.PSICOV'
 
-fmt1 = cf.Format(prog='mfDCA')
-fmt2 = cf.Format(prog='infCalc')
+def test_load(fn, prog):
+    df = cf.load_pairwise(fn, cf.Format(prog=prog))
+    print df.shape
+    print df[:10]
+    return df
 
-in1 = cf.load_pairwise(fn1, fmt1)
-in2 = cf.load_pairwise(fn2, fmt2)
+ins = list()
 
-
-
+for fn in  [ fn1, fn2, fn3 ]:
+    ins.append(test_load(fn, fn.split('.')[1]))
 
 
 
