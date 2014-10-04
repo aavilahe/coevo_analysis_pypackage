@@ -104,7 +104,7 @@ class Format:
         self.offset = 1
         self.delim = '\t'
         self.header = 0
-        self.keep_cols = (0, 4)
+        self.keep_cols = (0, 1, 5)
         self.stat_names = ('CoMap' + suff,)
         # extract alignment positions from first column
         self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]]) 
@@ -128,4 +128,19 @@ def load_pairwise(fn, fmt):
     df.columns = aln_column_labels + fmt.stat_names
     df.loc[:, aln_column_labels] -= fmt.offset  # renumber alignment columns to start at 0
     return df
+
+def drop_intraprotein(df, last_left_1):
+    ''' remove intraprotein scores
+    
+    '''
+
+    last_left_0 = last_left_1 - 1
+
+    interprotein_rows = (df.Left_Column <= last_left_0) & (df.Right_Column > last_left_0)
+    return df[interprotein_rows]
+
+def save_tab(df, output_fn):
+    df.to_csv(output_fn, sep = '\t', index = False, float_format = '%.6f')
+
+
 
