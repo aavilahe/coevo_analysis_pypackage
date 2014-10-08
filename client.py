@@ -5,36 +5,42 @@
 
 import sys
 import coevo  # nothing here yet
-import coevo.io as cio
+import coevo.scores as cs
 
 
-fn1 = 'test.mfDCA'
-fn2 = 'test.infCalc'
-fn3 = 'test.PSICOV'
-
-def dfstat(df):
+def diag(df, astr=''):
+    print astr
+    print df[:5]
     print df.shape
-    print df[:10]
+    print '\n\n'
 
-def test_load(fn, prog):
-    df = cio.load_pairwise(fn, cio.Format(prog=prog))
-    dfstat(df)
-    return df
+fnlist = [
+    'test.mfDCA',
+    'test.infCalc',
+    'test.PSICOV'
+    ]
 
-print '\n\n ..... test load \n\n'
-ins = list()
-for fn in  [ fn1, fn2, fn3 ]:
-    ins.append(test_load(fn, fn.split('.')[1]))
+tabdf_dict = dict()
+for fn in fnlist:
+    print "Reading %s" % fn
+    prog = fn.split('.')[-1]
+    tabdf = cs.Format(prog = prog).load(fn)
+    tabdf_dict[prog] = tabdf
+    diag(tabdf, '%s : ' % fn)
+    
+for prog, df in tabdf_dict.iteritems():
+    print "Dropping intraprotein in %s" % prog
+    if prog != 'infCalc':
+        tabdf_dict[prog] = cs.drop_intraprotein(df, left_length = 310)
+    diag(tabdf_dict[prog], '%s : ' % prog)
 
-print '\n\n ..... drop intra \n\n'
+bigdf = cs.merge_tabs(tabdf_dict.values(), left_index = True, right_index = True, how = 'outer')
+diag(bigdf, 'merged:')
 
-for i in xrange(len(ins)):
-    df = ins[i]
-    print '...'
-    if i != 1:
-        df = cio.drop_intraprotein(df, 310)
-    dfstat(df)
+cs.write_tab(bigdf, 'big_test.tab')
 
-for i,df in enumerate(ins):
-    cio.save_tab(df, str(i) + '.tab')
+
+
+
+
 
