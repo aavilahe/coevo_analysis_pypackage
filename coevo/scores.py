@@ -14,7 +14,6 @@ class Format:
 
         mfDCA
         plmDCA
-        PSICOV
         hpDCA  *formatted by hpDCA_support wrapper
         PSICOV
         CoMap
@@ -37,23 +36,23 @@ class Format:
         self.preproc = None         # no preprocessing
 
         if prog == 'mfDCA':
-            self._mfDCA_ini()
+            self._mfDCA_ini(suff)
         elif prog == 'plmDCA':
-            self._plmDCA_ini()
+            self._plmDCA_ini(suff)
         elif prog == 'hpDCA':
-            self._hpDCA_ini(self, suff)
+            self._hpDCA_ini(suff)
         elif prog == 'PSICOV':
-            self._PSICOV_ini()
+            self._PSICOV_ini(suff)
         elif prog == 'infCalc':
-            self._infCalc_ini()
+            self._infCalc_ini(suff)
         elif prog == 'CoMap':
-            self._CoMap_ini()
+            self._CoMap_ini(suff)
         elif prog == 'dist':
-            self._distance_ini()
+            self._distance_ini(suff)
         elif prog == 'tab':
             self._tab_ini()
     
-    def _mfDCA_ini(self):
+    def _mfDCA_ini(self, suff = ''):
         ''' http://dca.ucsd.edu/DCA/DCA.html 
 
         '''
@@ -62,9 +61,10 @@ class Format:
         self.delim  = ' '  # output columns are space-delimited
         self.header = None
         self.keep_cols = (0, 1, 2, 3)  # columns to keep
-        self.stat_names =  ('MIw', 'DI')
+        self.stat_names = ('MIw', 'DI')
+        self.stat_names = [ name + suff for name in self.stat_names ]
     
-    def _plmDCA_ini(self):
+    def _plmDCA_ini(self, suff = ''):
         ''' http://plmdca.csc.kth.se
 
         '''
@@ -74,6 +74,7 @@ class Format:
         self.header = None
         self.keep_cols = (0, 1, 2)
         self.stat_names = ('DIplm',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
     
     def _hpDCA_ini(self, suff = ''):
         ''' http://www.ploscompbiol.org/article/fetchSingleRepresentation.action?uri=info:doi/10.1371/journal.pcbi.1003176.s002
@@ -86,7 +87,8 @@ class Format:
         self.delim = '\t'
         self.header = None
         self.keep_cols = (0, 1, 2)
-        self.stat_names = ('DI' + suff,)
+        self.stat_names = ('DI',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
     
     def _PSICOV_ini(self, suff = ''):
         ''' http://bioinfadmin.cs.ucl.ac.uk/downloads/PSICOV/
@@ -98,8 +100,9 @@ class Format:
         self.header = None
         self.keep_cols = (0, 1, 4)
         self.stat_names = ('PSICOV',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
 
-    def _infCalc_ini(self):
+    def _infCalc_ini(self, suff = ''):
         ''' https://github.com/aavilahe/infCalc
 
         '''
@@ -109,6 +112,7 @@ class Format:
         self.header = 0  # first line as header
         self.keep_cols = (0, 1, 2, 3, 4, 5, 6, 7, 8)
         self.stat_names = ('Left_Entropy', 'Right_Entropy', 'Joint_Entropy', 'MI', 'VI', 'MIminh', 'MIj')
+        self.stat_names = [ name + suff for name in self.stat_names ]
 
     def _CoMap_ini(self, suff = ''):
         ''' http://home.gna.org/comap/
@@ -119,7 +123,8 @@ class Format:
         self.delim = '\t'
         self.header = 0
         self.keep_cols = (0, 1, 5)
-        self.stat_names = ('CoMap' + suff,)
+        self.stat_names = ('CoMap',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
         # extract alignment positions from first column
         self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]]) 
 
@@ -128,14 +133,14 @@ class Format:
         self.delim = '\t'
         self.header = None
         self.keep_cols = (0, 1, 4)
-        self.stat_names = ('Dist' + suff,)
+        self.stat_names = ('Dist',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
 
-    def _tab_ini(self, suff = ''):
+    def _tab_ini(self):
         self.offset = 0
         self.delim = '\t'
         self.header = 0
         self.keep_cols = None
-
 
     def load(self, fn):
         ''' load the output scores of a pairwise analysis
