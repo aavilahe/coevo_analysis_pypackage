@@ -123,10 +123,10 @@ class Format:
         self.delim = '\t'
         self.header = 0
         self.keep_cols = (0, 1, 5)
-        self.stat_names = ('CoMap',)
+        self.stat_names = ('CoMap', 'CoMapP')
         self.stat_names = [ name + suff for name in self.stat_names ]
         # extract alignment positions from first column
-        self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]]) 
+        self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]], axis = 1) 
 
     def _distance_ini(self, suff = ''):
         self.offset = 0
@@ -148,7 +148,7 @@ class Format:
         '''
 
         df = pd.read_table(fn, sep = self.delim, header = self.header, usecols = self.keep_cols)
-        if type(self.preproc) == 'function':
+        if hasattr(self.preproc, '__call__'):
             df = self.preproc(df)
 
         idx_colnames = ['Left_Column', 'Right_Column']
@@ -156,6 +156,7 @@ class Format:
         old_colnames = df.columns[:len(new_colnames)]
         df.rename(columns = dict(zip(old_colnames, new_colnames)), inplace = True)
 
+        df.loc[:, idx_colnames] = df.loc[:, idx_colnames].astype(int)
         df.loc[:, idx_colnames] -= self.offset  # renumber alignment columns to start at 0
         df.set_index(idx_colnames, inplace = True)
 
