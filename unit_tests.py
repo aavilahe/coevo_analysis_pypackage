@@ -17,7 +17,8 @@ def diag(df, astr=''):
 fnlist = [
     'test.mfDCA',
     'test.infCalc',
-    'test.PSICOV'
+    'test.PSICOV',
+    'test.CoMap'
     ]
 
 tabdf_dict = dict()
