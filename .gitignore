@@ -8,6 +8,7 @@ dist/*
 test.infCalc
 test.mfDCA
 test.PSICOV
+test.CoMap
 
 *.tab
 
