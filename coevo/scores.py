@@ -123,7 +123,7 @@ class Format:
         self.delim = '\t'
         self.header = 0
         self.keep_cols = (0, 1, 5)
-        self.stat_names = ('CoMap', 'CoMapP')
+        self.stat_names = ('CM', 'CMP')
         self.stat_names = [ name + suff for name in self.stat_names ]
         # extract alignment positions from first column
         self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]], axis = 1) 
