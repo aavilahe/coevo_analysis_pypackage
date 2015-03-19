@@ -1,44 +1,23 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 ''' fasta_to_phy.py -- Converts fasta to strict phylip
 
-	No ID mangling (truncate only)
-	Strict Phylip: 8 chars + 2 spaces + sequence on one line
-	Pipe friendly
+    - Truncates sequence identifiers to 8 characters.
+    - Leaves two spaces between identifier and sequence, each sequence on its
+      own line.
+    - Acts as a filter (stdin, stdout)
 
 '''
 
 import sys
-import re
-
-def ReadFasta(fh):
-	ali = list() # list of tuples
-	header = ''
-	seq = ''
-
-	for line in fh:
-		line = line.rstrip('\n\r')
-		if line == '':
-			continue
-		if line.startswith('>'):
-			if header != '':
-				ali += [(header, re.sub("\s+","",seq))]
-				seq = ''
-			header = line[1:].split()[0] # split id line on whitespace
-			continue
-		seq += line
-	ali += [(header, re.sub("\s+","",seq))] # remove whitespace from seqs
-	return ali
-
-def WritePhy(fh, ali):
-	nseqs = len(ali)
-	seqlen = len(ali[0][1]) # letters of first sequence
-	print >>fh, ' %d %d' % (nseqs, seqlen)
-	for h,s in ali:
-		print >>fh, h[:8].ljust(8) + '  ' + s # pad and add 2 spaces
-
+from Bio import AlignIO
 
 if __name__ == "__main__":
-	if(len(sys.argv) > 1):
-		print >>sys.stderr, "usage: %s < fasta > phy" % sys.argv[0]
-		sys.exit(1)
-	WritePhy(sys.stdout, ReadFasta(sys.stdin))
+    if(len(sys.argv) > 1):
+        print >>sys.stderr, "usage: %s < fasta > phy" % sys.argv[0]
+        sys.exit(1)
+
+    aln = AlignIO.read(sys.stdin, format = "fasta")
+    for seq in aln:
+        seq.id = seq.id[:8]
+        #seq.id = seq.id[:8].ljust(8) + '  '  # explicitly truncate, pad, add two spaces
+    print aln.format('phylip-sequential'),
