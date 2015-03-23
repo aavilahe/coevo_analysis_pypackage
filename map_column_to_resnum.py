@@ -1,301 +1,348 @@
 #!/usr/bin/env python
 ''' map_column_to_resnum.py -- map alignment column to resnum in pdb chain
-	
-	Example: chain A in 3DGE starts at 246, but alignment covers discontinuous domains
+
+    Example: chain A in 3DGE starts at 246, but alignment covers discontinuous domains
 
 '''
 
 import sys
 import getopt
-import re
-import tempfile
 import gzip
+import tempfile
 from os import remove
 from os.path import basename
 from subprocess import *
-import Bio.PDB
-import Bio.SeqUtils
+from StringIO import StringIO
+
+from Bio import Seq, SeqRecord, SeqIO, Align, AlignIO, PDB, SeqUtils
+from Bio.Align.Applications import MuscleCommandline
+from Bio.Emboss.Applications import NeedleCommandline
 
 __author__ = "Aram Avila-Herrera"
 
-PROFILE_ALN_AND_OPTIONS = 'fmuscle -profile -in1 %s -in2 %s -out /dev/stdout'
-PAIRWISE_ALN_AND_OPTIONS = 'needle -auto -asequence %s -bsequence %s -stdout -aformat3 fasta'
-
-def parseCommandLine(args):
-	''' Parse command line for options and return a dict.
-		
-		using getopt for compatibility
-	
-	'''
-
-	optlist, args = getopt.getopt(args, 'hr:', ['help', 'refid='])
-	options = dict()
-	usage = (
-				'usage: %s [ options ] chain_id pdb_file aln.fa\n\n' +\
-				'Options:\n' +\
-				'-h, --help           print this help and exit\n' +\
-				'-r, --refid REFID    map using given reference seq id in alignment\n\n'
-			) % sys.argv[0]
-	
-	# Read command line
-	for opt, val in optlist:
-		if opt in ('-h', '--help'):
-			sys.exit(usage)
-		if opt in ('-r', '--refid'):
-			options['refid'] = val
+PROFILE_ALIGNER_CMD = 'fmuscle -profile -in1 %s -in2 %s -out /dev/stdout'
+PAIR_ALIGNER_CMD = 'needle -auto -asequence %s -bsequence %s -stdout -aformat3 fasta'
 
-	if len(args) != 3:
-		print >>sys.stderr, 'wrong number of arguments'
-		sys.exit(usage)
+def parse_cmd_line(args):
+    ''' Parse command line for options and return a dict.
 
-	options['chain_id'] = args[0]
-	options['pdb_file'] = args[1]
-	options['aln.fa'] = args[2]
+        uses getopt for compatibility
 
-	return options
+    '''
 
-def readFasta(fh):
-	''' reads a fasta file (or list of lines) and returns a dict
+    optlist, args = getopt.getopt(args, 'hr:', ['help', 'refid=', 'ex_aln'])
+    options = dict()
+    usage = (
+             'usage: %s [ options ] chain_id pdb_file aln.fa\n\n'
+             'Options:\n'
+             '-h, --help           print this help and exit\n'
+             '-r, --refid REFID    map using given reference seq id in alignment\n'
+             '--ex_aln             use external aligners\n\n'
+             ) % sys.argv[0]
 
-		'>' not included in seqID, comment is lost
+    # Read command line
+    for opt, val in optlist:
+        if opt in ('-h', '--help'):
+            sys.exit(usage)
+        if opt in ('-r', '--refid'):
+            options['refid'] = val
+        if opt in ('--ex_aln'):
+            options['ex_aln'] = True
 
-	'''
+    if len(args) != 3:
+        print >>sys.stderr, 'wrong number of arguments'
+        sys.exit(usage)
 
-	ali = list() # list of tuples
-	seqID = ''
-	seq = ''
-
-	for line in fh:
-		line = line.strip()
-		if line == '':
-			continue
-		if line.startswith('>'):
-			if seqID != '':
-				ali += [(seqID, re.sub('\s+', '', seq))]
-				seq = ''
-			seqID = line[1:].split()[0] # split id line on whitespace, lose comment
-			continue
-		seq += line
-	ali += [(seqID, re.sub('\s+', '', seq))] # remove whitespace from seqs
-
-	ali = dict(ali)
-
-	return ali
-
-def alignWrap(CMD_TEMPLATE, fa1, fa2):
-	''' wrapper aligns sequences in two given fasta files
-
-		returns dict: key = seqid, value = seq
-
-	'''
-	
-	cmd = (CMD_TEMPLATE % (fa1, fa2)).split()
-	profile_alignment = Popen(cmd, stdout=PIPE).communicate()[0] # watch out for large alignments
-	ali_dict = readFasta(profile_alignment.split('\n')) # parse
-
-	return ali_dict
+    options['chain_id'] = args[0]
+    options['pdb_file'] = args[1]
+    options['aln.fa'] = args[2]
 
-def openModel(pdb_fn):
-	''' opens first model in given pdb file name
+    return options
 
-		if file name ends in .gz, will attempt to open as a gzipped file
+def open_model(pdb_fn):
+    ''' opens first model in given pdb file name
 
-	'''
+        if file name ends in .gz, will attempt to open as a gzipped file
 
-	if pdb_fn.endswith('.gz'):
-		pdb_fh = gzip.open(pdb_fn)
-	else:
-		pdb_fh = open(pdb_fn)
+    '''
 
-	pdb_id = basename(pdb_fn).split('.')[0]
-	structure = Bio.PDB.PDBParser().get_structure(pdb_id, pdb_fh)
-	model = structure[0] # assume 1 model in pdb file
-	
-	return model
+    if pdb_fn.endswith('.gz'):
+            pdb_fh = gzip.open(pdb_fn)
+    else:
+            pdb_fh = open(pdb_fn)
 
-def getNonHetResidues(chain):
-	''' get list of residues from chain, remove those with het flag
+    pdb_id = basename(pdb_fn).split('.')[0]
+    structure = PDB.PDBParser().get_structure(pdb_id, pdb_fh)
+    model = structure[0] # assume 1 model in pdb file
 
-	'''
+    return model
 
-	all_res = chain.get_residues()
-	nonhet_res = [ res for res in all_res if res.get_id()[0] == ' ' ]
-	return nonhet_res
+def chain_to_SeqRecord(chain, chain_id):
+    ''' generate a SeqRecord from chain object and chain id
 
-def chainToFasta(chain_id, nonhet):
-	''' returns fasta string of chain sequence
+        keeps only residues with no flags (eg. no HET residues)
+        resnum saved in letter_annotations['resnum']
 
-	'''
+    '''
 
-	fasta_str = '>%s\n' % chain_id
-	fasta_str += ''.join(( Bio.SeqUtils.seq1(res.resname) for res in nonhet ))
-	return fasta_str
+    # aa_l, resns = zip(*[
+    #                       (SeqUtils.seq1(res.resname), res.id[1])
+    #                       for res
+    #                       in chain.get_residues()
+    #                       if res.id[0] == ' '
+    #                     ])
+    # aas = ''.join(aa_l)
 
-def makeTempFasta(fasta_str):
-	''' make temporary fasta file
+    residues = chain.get_residues()
 
-	'''
+    aas = ''
+    resns = list()
+    for res in residues:
+        # res.id is currently a 3-tuple: (het, resnum, icode)
+        if res.id[0] == ' ':
+            # no HET flag
+            aas += SeqUtils.seq1(res.get_resname())  # get 1-letter resname
+            resns += [res.id[1]]
 
-	tmp_fh = tempfile.NamedTemporaryFile(suffix='.fa', delete=False)
-	print >>tmp_fh, fasta_str
-	print >>sys.stderr, 'Created temporary fasta "%s"' % tmp_fh.name
-	tmp_fh.close()
+    seqrec = SeqRecord.SeqRecord(Seq.Seq(aas), id = chain_id,
+                           letter_annotations = {"resnum": resns})
 
-	return tmp_fh
+    return seqrec
 
-def trimAln(og_aln, pr_aln):
-	''' remove pr_aln columns not in og_aln
+# aln
+def make_ex_aligner(EX_ALN_CMD):
+    ''' returns a function to align to fasta files with an external aligner
 
-	'''
+        EX_ALN_CMD: command line containing two '%s' formatting operators, eg.
+                    'muscle -profile -in1 %s -in2 %s -out /dev/stdout' or
+                    'needle -auto -asequence %s -bsequence %s -stdout -aformat3 fasta'
 
-	og_len = len(og_aln.itervalues().next())
-	pr_len = len(pr_aln.itervalues().next())
+    '''
 
-	# pr alignment with only sequences in og alignment
-	pr_subaln = dict(( (seqid, seq) for (seqid, seq) in pr_aln.iteritems() if seqid in og_aln ))
+    def ex_aligner(fa1, fa2):
+        ''' aligns sequences in two fasta files with an external aligner
 
-	pr_curr = 0
-	fin_idx_set = set()
-	for og_idx in xrange(og_len):
-		# find a match for each og column
-		og_col = getCol(og_aln, og_idx)
-		for pr_idx in xrange(pr_curr, pr_len):
-			# search all pr columns starting at pr_curr
-			pr_subcol = getCol(pr_subaln, pr_idx)
-			if isSameColumn(og_col, pr_subcol):
-				fin_idx_set.add(pr_idx)
-				pr_curr = pr_idx + 1
-				break
-	
-	if len(fin_idx_set) != og_len:
-		print >>sys.stderr, 'Warning: profile alignment messed up original alignment columns!'
-	
-	trim_aln = dict(( (seqid, getAAs(seq, fin_idx_set)) for (seqid, seq) in pr_aln.iteritems() ))
+            fa1, fa2: filenames of fasta files to align
 
-	return trim_aln
+            returns a MultipleSeqAlignment object
 
-def getAAs(seq, idxs):
-	''' get amino acids at given indices
+        '''
 
-		return string of amino acids or list of other elements
+        cmd = (EX_ALN_CMD % (fa1, fa2)).split()
+        cmd_sout = Popen(cmd, stdout=PIPE).communicate()[0]  # watch out for large alignments
+        exaln = AlignIO.read(StringIO(cmd_sout), format = "fasta")
 
-	'''
-	
-	subseq = [ aa for (idx, aa) in enumerate(seq) if idx in idxs ]
-	if all(( (isinstance(aa, basestring) and len(aa) == 1) for aa in subseq )):
-		subseq = ''.join(subseq)
-	
-	return subseq
+        return exaln
 
-def getCol(aln, idx):
-	''' get column idx of aln
+    return ex_aligner
 
-	'''
+def muscle_profile_align(fa1, fa2):
+    ''' uses muscle to align two fastas
 
-	seqid_aa = dict(( (seqid, seq[idx]) for (seqid, seq) in aln.iteritems() ))
+        fa1 and fa2 must exist on disk when command is called
 
-	return seqid_aa
+        returns a MultipleSeqAlignment object
 
-def isSameColumn(colA, colB):
-	''' test if two columns (dictionaries) are the same, seqs (keys) may be in any order
+    '''
 
-		requires same number of sequences in both columns for equality
+    muscle_cmd = MuscleCommandline(input = fa1, in2 = fa2,
+                                   profile = True
+                                   )
+    exaln = AlignIO.read(StringIO(muscle_cmd()[0]), format = "fasta")
 
-	'''
+    return exaln
 
-	return set(colA.items()) == set(colB.items())
+def needle_align(fa1, fa2):
+    ''' uses needle to align two fastas
 
-def getElementAlongSeq(aln_seq, el):
-	''' inserts gaps from aln_seq into element_list
+        fa1 and fa2 must exist on disk when command is called
 
-	'''
+        default penalties:
+            gapopen = 10.0
+            gapextend = 0.5
 
-	# reverse element_list
-	rel = el[::-1]
-	place_elements = lambda aa: '-' if aa == '-' else rel.pop()
-	eleAlongSeq = [ place_elements(aa) for aa in aln_seq ]
+        returns a MultipleSeqAlignment object
 
-	return eleAlongSeq
+    '''
 
-def alignChainToAln(aln_fn, chain_id, nonhet_chain):
-	''' align residues in nonhet_chain to alignment in aln_fn
+    needle_cmd = NeedleCommandline(asequence = fa1, bsequence = fa2,
+                                   outfile='/dev/stdout', aformat = 'fasta',
+                                   gapopen = 10.0, gapextend = 0.5
+                                   )
+    exaln = AlignIO.read(StringIO(needle_cmd()[0]), format = 'fasta')
 
-		return (col, resnum, aa)
+    return exaln
 
-	'''
+def profile_align(seqr, aln_fn, ex_aligner = muscle_profile_align):
+    ''' align sequence to alignment
 
-	# profile align alignment and pdb chain
-	og_aln = readFasta(open(aln_fn))
+    '''
 
-	chain_fa_str = chainToFasta(chain_id, nonhet_chain)
-	tmp_chain_fa_fh = makeTempFasta(chain_fa_str)
+    tmp_fa = make_tmp_fa(seqr.format('fasta'))
+    exaln = ex_aligner(tmp_fa.name, aln_fn)
+    remove(tmp_fa.name)
 
-	pr_aln = alignWrap(PROFILE_ALN_AND_OPTIONS, aln_fn, tmp_chain_fa_fh.name)
-	remove(tmp_chain_fa_fh.name)
+    return exaln
 
-	# add resnum and trim pr_aln
-	resnums = [ res.get_id()[1] for res in nonhet_chain ]
-	pr_aln_resnums = getElementAlongSeq(pr_aln[chain_id], resnums)
+def pair_align(seqr, ref_seqr, ex_aligner = needle_align):
+    ''' align sequence to reference sequence in alignment
 
-	pr_aln['_RESNUM_'] = pr_aln_resnums
-	tr_aln = trimAln(og_aln, pr_aln)
+    '''
 
-	col_resnum_aa = [ (col, resnum, tr_aln[chain_id][col]) for (col, resnum) in enumerate(tr_aln['_RESNUM_']) if resnum != '-' ]
+    tmp_fa = make_tmp_fa(seqr.format('fasta'))
+    tmp_ref_fa = make_tmp_fa(SeqRecord.SeqRecord(ref_seqr.seq.ungap('-'),
+                             id = ref_seqr.id, description = '').format('fasta'))
+    exaln = ex_aligner(tmp_fa.name, tmp_ref_fa.name)
+    remove(tmp_fa.name)
+    remove(tmp_ref_fa.name)
 
-	return col_resnum_aa
+    return exaln
 
-def alignChainToRefId(ref_id, aln_fn, chain_id, nonhet_chain):
-	''' align residues in nonhet_chain to alignment in aln_fn through a reference sequence
+def mangle_id(seq_id):
+    ''' mangle sequence id to avoid conflicts
 
-		return (col, resnum, aa)
-	
-	'''
-	
+    '''
 
-	# align ref seq and pdb chain
-	og_aln = readFasta(open(aln_fn))
-	ref_seq = og_aln[ref_id]
+    return '__XX__chain[%s]__XX__' % seq_id
 
-	chain_fa_str = chainToFasta(chain_id, nonhet_chain)
-	tmp_chain_fa_fh = makeTempFasta(chain_fa_str)
+def make_tmp_fa(fasta_str):
+    ''' writes fasta formatted string to temporary file
 
-	refseq_fa_str = '>%s\n%s' % (ref_id, ref_seq)
-	tmp_refseq_fa_fh = makeTempFasta(refseq_fa_str)
+        returns handle to temp file
 
-	pa_aln = alignWrap(PAIRWISE_ALN_AND_OPTIONS, tmp_refseq_fa_fh.name, tmp_chain_fa_fh.name)
-	remove(tmp_chain_fa_fh.name)
-	remove(tmp_refseq_fa_fh.name)
-	
-	# add resnum
-	resnums = [ res.get_id()[1] for res in nonhet_chain ]
-	pa_aln_resnums = getElementAlongSeq(pa_aln[chain_id], resnums)
+    '''
 
-	# map column to refseq position in original alignment
-	# map refseq position to column in pairwise alignment
-	# map pairwise column to resnum, aa
+    tmp_fh = tempfile.NamedTemporaryFile(suffix='.fa', delete=False)
+    print >>tmp_fh, fasta_str
+    print >>sys.stderr, 'Created temporary fasta "%s"' % tmp_fh.name
+    tmp_fh.close()
 
-	ref_seq_len = len(ref_seq.replace('-',''))
-	refpos_list = range(1, ref_seq_len + 1)
-	og_aln_refpos = getElementAlongSeq(ref_seq, refpos_list)
-	pa_aln_refpos = getElementAlongSeq(pa_aln[ref_id], refpos_list)
+    return tmp_fh
 
-	pacolATrefpos = dict(( (refpos, pacol) for (pacol, refpos) in enumerate(pa_aln_refpos) ))
-	col_pacol = ( (col, pacolATrefpos[refpos]) for (col, refpos) in enumerate(og_aln_refpos) if refpos != '-' )
-	col_resnum_aa = [ (col, pa_aln_resnums[pacol], pa_aln[chain_id][pacol]) for (col, pacol) in col_pacol if pa_aln_resnums[pacol] != '-' ]
+def annotate_positions(seqrec):
+    ''' add position numbering to seqrec
 
-	return col_resnum_aa
+    '''
+
+    pos_list = list()
+    pos = 0
+    for aa in seqrec.seq:
+        if aa == '-':
+            pos_list += ['-']
+        else:
+            pos_list += [pos]
+            pos += 1
+
+    seqrec.letter_annotations['pos'] = pos_list
+
+    return seqrec
+
+def pop_row(aln, seqid):
+    ''' pop a row from an alignment by sequence id
+
+        from Bio import SeqIO
+    '''
+
+    aln_d = SeqIO.to_dict(aln)
+    seq = aln_d[seqid]
+    del aln_d[seqid]
+    aln = Align.MultipleSeqAlignment(aln_d.itervalues())
+
+    return seq, aln
+
+def col_to_resn(aln, chain_seqr, aln_ref, chain_ref_id):
+    ''' map columns in aln to resnums in chain_seqr
+
+        aln: original input alignment
+        chain_seqr: chain sequence annotated with resnums
+        aln_ref: aln aligned to chain_seqr (profile or pairwise to ref)
+        chain_ref_id: mangled chain sequence id in aln_ref
+
+        Returns
+        col_resn_aa: list of (column number, resnum, amino acid) tuples
+
+        Mapping is done in three steps:
+
+        1. map aln column to aln_ref column
+        2. map aln_ref column to chain_ref position
+        3. map chain_ref position to resnum (chain_ref position = chain_seqr position)
+
+    '''
+
+    chain_id = chain_seqr.id
+
+    # pop aligned chain sequence from reference alignment
+    chain_ref, aln_ref = pop_row(aln_ref, chain_ref_id)
+    chain_ref = annotate_positions(chain_ref)
+
+    # sort aln_ref and aln rows by sequence id (to compare columns)
+    aln_ref.sort()
+    aln.sort()
+
+    # 1. map aln column to aln_ref columns
+    aln_len = aln.get_alignment_length()
+    aln_ref_len = aln_ref.get_alignment_length()
+    js = 0  # first column in aln_ref to start checking
+    i_j = list()
+    for i in xrange(aln_len):
+        if str(set(aln[:, i])) != '-':
+            # all-gap columns in original alignment result in ambiguous mapping
+            # so we skip them
+            for j in xrange(js, aln_ref_len):
+                if aln_ref[:, j] == aln[:, i]:
+                    i_j += [(i, j)]
+                    js = j + 1
+                    break
+
+    if len(i_j) != aln_len:
+        print >>sys.stderr, 'Warning: some original alignment columns were skipped while mapping!'
+
+    # 2. map aln_ref column to exchain position
+    # 3. map chain_seqr index to resnum
+    col_resn_aa = list()
+
+    for (i, j) in i_j:
+        pos = chain_ref.letter_annotations['pos'][j]
+        if pos != '-':
+            resn = chain_seqr.letter_annotations['resnum'][pos]
+            col_resn_aa += [(i, resn, chain_seqr[pos])]
+
+    return col_resn_aa
+
 
 if __name__ == "__main__":
-	options = parseCommandLine(sys.argv[1:])
-	model = openModel(options['pdb_file'])
-	chain = model[options['chain_id']]
-	nonhet_chain = getNonHetResidues(chain)
-	if 'refid' in options:
-		col_resnum_aa = alignChainToRefId(options['refid'], options['aln.fa'],
-										options['chain_id'], nonhet_chain)
-	else:
-		col_resnum_aa = alignChainToAln(options['aln.fa'], options['chain_id'], nonhet_chain)
-	
-	for c_r_a in col_resnum_aa:
-		print '\t'.join(map(str, c_r_a))
+    options = parse_cmd_line(sys.argv[1:])
+    aln = AlignIO.read(options['aln.fa'], format = "fasta")
+    model = open_model(options['pdb_file'])
+    chain = model[options['chain_id']]
+    chain_seqr = chain_to_SeqRecord(chain, options['chain_id'])
+    chain_seqr_m = SeqRecord.SeqRecord(chain_seqr.seq, id = mangle_id(chain_seqr.id),
+                                       name = '', description = '')
+
+    if 'refid' in options:
+        # align chain to reference in alignment
+        aln_l = [ seqr for seqr in aln if seqr.id == options['refid'] ]
+        if len(aln_l) < 1:
+            print >>sys.stderr, "refid <%s> not in reference alignment %s" % \
+                                    (options['refid'], options['aln.fa'])
+            sys.exit(1)
+        ref_seqr = aln_l[0]
+        if 'ex_aln' in options:
+            ex_aligner = make_ex_aligner(PAIR_ALIGNER_CMD)
+        else:
+            ex_aligner = needle_align
+        aln_ref = pair_align(chain_seqr_m, ref_seqr, ex_aligner)
+        col_resn_aa = col_to_resn(Align.MultipleSeqAlignment([ref_seqr]),
+                                  chain_seqr, aln_ref, chain_seqr_m.id)
+    else:
+        # align chain to alignment
+        if 'ex_aln' in options:
+            ex_aligner = make_ex_aligner(PROFILE_ALIGNER_CMD)
+        else:
+            ex_aligner = muscle_profile_align
+        aln_ref = profile_align(chain_seqr_m, options['aln.fa'], ex_aligner)
+        col_resn_aa = col_to_resn(aln, chain_seqr, aln_ref, chain_seqr_m.id)
+
+    for c_r_a in col_resn_aa:
+        print '\t'.join(map(str, c_r_a))
 
