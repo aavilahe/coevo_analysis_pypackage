@@ -1,27 +1,26 @@
-# struct_viz #
+# coevo_struct_viz
 
-These are scripts to visualize scores, p-values,
-and labels onto structures (PDB files).
+These are scripts to help visualize alignment column
+scores and labels onto structures (PDB files).
 
-## Example usage ##
+
+## Usage
+
+### `map_column_to_resnum.py`
+
+Use this to map alignment columns to resnums in a corresponding chain
+in a structural model. You can use the alignment or a sequence in the alignment as a reference.
 
 ```bash
-# extract chain `B' sequence from ProtX.pdb
-python extract_seq.py ProtX.pdb B > ProtX_B.map 
-# map resnums to alignment column
-python map_column_to_resnum.py --alignment=orthosX.phy --chainMap=ProtX_B.map > ProtX_resnum_col.map 
+$ ./map_column_to_resnum.py chain_id model.pdb aln.fa > col_resn_aa.tsv
+
+```
+
+Default profile aligner (for mapping to alignment) is `muscle`. Default pairwise global aligner
+is `needle` from Emboss.
+
 # map co-evolution scores to residues
 python make_attributes.py --LeftMap=ProtX_resnum_col.map Results.tab > ProtX_attributes.txt
-```
-
-### `extract_seq.py` ###
-
-Extracts residues for a chain from ATOM records.
-
-```bash
-usage: extract_seq.py in.pdb chain
-output: in_chain.fa, in_chain.tab
-```
 
 ### `map_column_to_resnum.py` ###
 #### *Mapping not optimal* ####
