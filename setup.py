@@ -8,6 +8,6 @@ setup(name = 'coevo',
         author_email = 'Aram.Avila-Herrera@ucsf.edu',
         license = 'GPL',
         packages = [ 'coevo' ],
-        install_requires = [ 'pandas' ],
+        install_requires = [ 'pandas', 'biopython' ],
         zip_safe = False
         )
