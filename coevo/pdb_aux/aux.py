@@ -1,9 +1,13 @@
 #!/usr/bin/env python
-''' pdb_aux.py -- auxiliary functions that help do things with Bio.PDB 
+''' aux.py -- auxiliary functions that help do things with Bio.PDB 
 
 '''
 
-from Bio import Seq, SeqRecord, SeqUtils
+import gzip
+from os.path import basename
+from Bio import Seq, SeqRecord, SeqUtils, PDB
+
+from coevo.pdb_aux.distances import get_nonhet_residues
 
 __author__ = "Aram Avila-Herrera"
 
@@ -19,24 +23,11 @@ def Chain_to_SeqRecord(chain):
 
     '''
 
-    # aa_l, resns = zip(*[
-    #                       (SeqUtils.seq1(res.resname), res.id[1])
-    #                       for res
-    #                       in chain.get_residues()
-    #                       if res.id[0] == ' '
-    #                     ])
-    # aas = ''.join(aa_l)
-
-    residues = chain.get_residues()
-
     aas = ''
     resns = list()
-    for res in residues:
-        # res.id is currently a 3-tuple: (het, resnum, icode)
-        if res.id[0] == ' ':
-            # no HET flag
-            aas += SeqUtils.seq1(res.get_resname())  # get 1-letter resname
-            resns += [res.id[1]]
+    for res in get_nonhet_residues(chain):
+        aas += SeqUtils.seq1(res.get_resname())  # get 1-letter resname
+        resns += [res.id[1]]
 
     seqr = SeqRecord.SeqRecord(Seq.Seq(aas), id = chain.id,
                                letter_annotations = {"resnum": resns})
