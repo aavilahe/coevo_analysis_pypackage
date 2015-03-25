@@ -58,7 +58,7 @@ def has_structure_carbon(residue):
 
     if 'CB' in residue:
         return True
-    if res.get_resname() == 'GLY' and 'CA' in residue:
+    if residue.get_resname() == 'GLY' and 'CA' in residue:
         return True
 
     return False
@@ -97,4 +97,21 @@ def calc_residue_distance(res_a, res_b, get_coords):
     
     # We want the smallest atom-atom distance between residues
     return min(atom_distances)
+
+def choose_get_coords(dist_atoms):
+    ''' Choose get_coords function from dist_atoms
+
+        dist_atoms: a string 'Cb', 'NoH', or 'Any'
+
+        Returns a get_coords function. Defaults to get_CB_coord()
+        
+        TODO: make these part of a class or something...
+
+    '''
+    
+    if dist_atoms == 'NoH':
+        return get_nonH_coords
+    if dist_atoms == 'Any':
+        return get_allatom_coords
+    return get_CB_coord
 
