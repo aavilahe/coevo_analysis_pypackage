@@ -31,8 +31,8 @@ DIST1="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R1}.Cb.dist"
 DIST2="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R2}.Cb.dist"
 MDIST="${PDB%.pdb*}.Cb.mindist"
 
-python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R1} --mapL=${MAPL1} --mapR=${MAPR1} --dtype=Cb ${PDB} > ${DIST1}
-python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R2} --mapL=${MAPL1} --mapR=${MAPR2} --dtype=Cb ${PDB} > ${DIST2}
+python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R1} --dist_atoms=Cb ${PDB} > ${DIST1}
+python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R2} --dist_atoms=Cb ${PDB} > ${DIST2}
 
 python ${BIN}/min_dists.py ${DIST1} ${DIST2} > ${MDIST}
 
