@@ -7,7 +7,7 @@ import gzip
 from os.path import basename
 from Bio import Seq, SeqRecord, SeqUtils, PDB
 
-from coevo.pdb_aux.distances import get_nonhet_residues
+from .distances import get_nonhet_residues
 
 __author__ = "Aram Avila-Herrera"
 

@@ -16,7 +16,7 @@ from itertools import product, combinations
 import pandas as pd
 from Bio import SeqUtils
 
-import coevo.pdb_aux.aux as aux
+import coevo.pdb_aux as pdb_aux
 import coevo.pdb_aux.distances as distances
 
 __author__ = 'Aram Avila-Herrera'
@@ -127,7 +127,7 @@ def get_distances(res_pairs, get_coords):
 
 if __name__ == "__main__":
     options = parse_cmd_line(sys.argv[1:])
-    structure = aux.open_pdb(options['pdb_file'])
+    structure = pdb_aux.open_pdb(options['pdb_file'])
     model = structure[0]
     get_coords = distances.choose_get_coords(options['dist_atoms'])
 
