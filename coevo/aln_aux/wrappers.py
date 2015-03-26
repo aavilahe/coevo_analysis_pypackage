@@ -1,5 +1,5 @@
 #!/usr/bin/python env
-''' aln_aux.py -- miscellaneous wrappers for dealing with alignments
+''' wrappers.py -- miscellaneous wrappers for dealing with alignments
 
 '''
 

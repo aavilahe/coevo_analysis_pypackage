@@ -1,61 +1,54 @@
 #!/usr/bin/env python
-''' min_dists.py -- read two `get_dists.py' outputs, get min dists per res-pair
+''' min_dists.py -- Get min distances among chains
+
+    When mapping distances to alignment column pairs, choose
+    the closest chain.
+
+    Eg. chain A makes contacts with a pair of identical chains C and D
 
 '''
 
 import sys
+import pandas as pd
 
-def read_dist(fh):
-	''' read output from get_dists.py
+def load_dists(fn):
+    ''' Returns pandas.DataFrame indexed by first and second column
 
-		left_num, right_num, left_aa, right_aa, dist
-	
-	'''
+        Expects distance name in third column
+    
+    '''
 
-	dists = dict()
-	for line in fh:
-		left_num, right_num, left_aa, right_aa, dist = line.rstrip().split()[:5]
-		dists[(int(left_num), int(right_num))] = (left_aa, right_aa, float(dist))
-	
-	return dists
+    df = pd.read_table(fn, header = 0, index_col = [0, 1])
 
-def min_record(rec1, rec2):
-	''' compare distances in record 1 and 2, return record with min distance
+    return df
 
-		rec := (left_aa, right_aa, dist)
+def get_min(df1, df2):
+    ''' Gets minimum distances for each pair of alignment columns
 
-	'''
+        pandas.concat() should work with multiple distance columns
+                        but doesn't care about left/right resnums
 
-	if rec1[2] < rec2[2]:
-		return rec1
-	return rec2
+    '''
 
-def print_min(dists1, dists2):
-	''' print min dists for common res-pairs
+    ## merge only works if there is a single distance column
+    #dist_name = df1.columns[0]
+    #dfmerge = df1.merge(df2, how = 'outer', left_index = True, right_index = True)
+    #dmin = dfmerge.min(axis = 1).to_frame(dist_name)
 
-	'''
+    index_names = list(df1.index.names)
+    dfcat = pd.concat([df1, df2], key = ['One', 'Two'], names = ['ChainPair'])
+    dfmin = dfcat.groupby(level = index_names).min().dropna()
 
-	all_res_pairs = sorted(set(dists1.iterkeys()) | set(dists2.iterkeys()))
-
-	for res_pair in all_res_pairs:
-		if res_pair in dists1 and res_pair in dists2:
-			min_rec = min_record(dists1[res_pair], dists2[res_pair])
-		elif res_pair in dists1 and res_pair not in dists2:
-			min_rec = dists1[res_pair]
-		else:
-			min_rec = dists2[res_pair]
-		print '%d\t%d\t%s\t%s\t%.6f' % (res_pair + min_rec)
+    return dfmin
 
 if __name__ == '__main__':
-	if len(sys.argv) < 3:
-		print >>sys.stderr, 'usage: %s dists1 dists2 > mindists'
-		sys.exit(1)
-	
-	dfn1 = open(sys.argv[1])
-	dfn2 = open(sys.argv[2])
+    if len(sys.argv) < 3:
+        print >>sys.stderr, 'usage: %s dists1 dists2 > mindists'
+        sys.exit(1)
+    
+    df1 = load_dists(sys.argv[1))
+    df2 = load_dists(sys.argv[2])
 
-	dists1 = read_dist(dfn1)
-	dists2 = read_dist(dfn2)
-
-	print_min(dists1, dists2)
+    dfmin = get_min(df1, df2)
+    dfmin.to_csv(sys.stdout, header = True, index = True, sep = '\t')
 

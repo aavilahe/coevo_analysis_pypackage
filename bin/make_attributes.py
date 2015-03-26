@@ -29,7 +29,7 @@ if __name__ == "__main__":
         print >>sys.stderr, 'usage: %s scores.tab chain_id > attributes.txt' % sys.argv[0]
         sys.exit(1)
     
-    res_scores_fn = open(sys.argv[1], 'r')
+    res_scores_fn = sys.argv[1]
     chain_id = sys.argv[2]
 
     res_scores_df = load_scores(res_scores_fn)
