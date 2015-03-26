@@ -117,8 +117,8 @@ def get_distances(res_pairs, get_coords):
     
     return [
             (res_a.id[1], res_b.id[1],
-             SeqUtils.seq1(res_a.resname), SeqUtils.seq1(res_b.resname),
-             distances.calc_residue_distance(res_a, res_b, get_coords)
+             distances.calc_residue_distance(res_a, res_b, get_coords),
+             SeqUtils.seq1(res_a.resname), SeqUtils.seq1(res_b.resname)
              )
             for (res_a, res_b)
             in res_pairs
@@ -141,8 +141,8 @@ if __name__ == "__main__":
     dists = get_distances(res_pairs, get_coords)
     dists_df = pd.DataFrame(dists,
                             columns = ['Left_resn', 'Right_resn',
-                                       'Left_AA', 'Right_AA',
-                                       'Distance'
+                                       'Distance',
+                                       'Left_AA', 'Right_AA'
                                        ]
                             ).set_index(['Left_resn', 'Right_resn'])
     dists_df.to_csv(sys.stdout, sep = '\t', header = True, float_format = '%.6f')
