@@ -3,6 +3,8 @@
 
 '''
 
+import sys
+
 import tempfile
 from Bio import SeqIO, Align
 from copy import deepcopy
@@ -49,7 +51,7 @@ def ungap_SeqRecord(seqr):
     '''
 
     ug_seqr = deepcopy(seqr)
-    ug_seqr.seq = ug_seqr.ungap('-')
+    ug_seqr.seq = ug_seqr.seq.ungap('-')
 
     return ug_seqr
 
