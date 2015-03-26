@@ -15,7 +15,7 @@ import coevo.tab_aux as tab_aux
 def load_dists(fn):
     ''' Returns pandas.DataFrame indexed by first and second column
         
-        Expects distances are in third column. Drops other columns
+        Expects distances in third column. Drops other columns
 
     '''
     
