@@ -3,11 +3,16 @@
 
 '''
 
-from copy import deepcopy
+from os import remove
 from subprocess import Popen, PIPE
 from StringIO import StringIO
 
 from Bio import AlignIO
+from Bio.Align.Applications import MuscleCommandline
+from Bio.Emboss.Applications import NeedleCommandline
+
+from .aux import make_tmp_fa
+
 
 def make_external_aligner(EX_ALN_CMD):
     ''' Returns a function to align to fasta files with an external aligner.
@@ -119,27 +124,4 @@ def pair_align_SeqRecords(seqr_a, seqr_b, ex_aligner = needle_align):
 
     return exaln
 
-def ungap_SeqRecord(seqr):
-    ''' Returns an ungapped copy of a SeqRecord
-
-    '''
-
-    ug_seqr = deepcopy(seqr)
-    ug_seqr.seq = ug_seqr.ungap('-')
-
-    return ug_seqr
-
-def make_tmp_fa(fasta_str):
-    ''' Writes fasta formatted string to temporary file
-
-        Returns handle to temp file
-
-    '''
-
-    tmp_fh = tempfile.NamedTemporaryFile(suffix='.fa', delete=False)
-    print >>tmp_fh, fasta_str
-    print >>sys.stderr, 'Created temporary fasta "%s"' % tmp_fh.name
-    tmp_fh.close()
-
-    return tmp_fh
 
