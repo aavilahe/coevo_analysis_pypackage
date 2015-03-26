@@ -2,5 +2,13 @@
 
 *.pyc
 
+coevo.egg-info/*
+dist/*
+
 test.infCalc
 test.mfDCA
+test.PSICOV
+test.CoMap
+
+*.tab
+
