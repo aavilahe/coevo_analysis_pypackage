@@ -7,6 +7,8 @@ import pandas as pd
 
 def load_pairtab(fn):
     ''' Loads tab delimited file indexed by first two columns
+        
+        Returns a pandas.DataFrame
 
     '''
 
@@ -16,6 +18,8 @@ def load_pairtab(fn):
 
 def load_flattab(fn):
     ''' Loads tab delimited file indexed by first column
+
+        Returns a pandas.DataFrame
 
     '''
 
