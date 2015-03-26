@@ -6,7 +6,6 @@
 from itertools import product
 
 from numpy.linalg import norm
-import pandas as pd
 
 __author__ = 'Aram Avila-Herrera'
 
@@ -116,36 +115,4 @@ def choose_get_coords(dist_atoms):
     if dist_atoms == 'Any':
         return get_allatom_coords
     return get_CB_coord
-
-def load_pairtab(fn):
-    ''' Loads tab delimited file indexed by first two columns
-
-    '''
-
-    df = pd.read_table(fn, header = 0, index_col = [0, 1])
-
-    return df
-
-def get_min_dists(df1, df2):
-    ''' Gets minimum distances for each pair of alignment columns
-
-        df1, df2: pandas.DataFrame indexed by alignment column numbers.
-                  All DataFrame columns are expected to be distances
-
-        pandas.concat() should work with multiple distance columns
-                        but doesn't care about index names
-
-    '''
-
-    ## merge only works if there is a single distance column
-    #dist_name = df1.columns[0]
-    #dfmerge = df1.merge(df2, how = 'outer', left_index = True, right_index = True)
-    #dmin = dfmerge.min(axis = 1).to_frame(dist_name)
-
-    index_names = list(df1.index.names)
-    dfcat = pd.concat([df1, df2], keys = ['One', 'Two'], names = ['ChainPair'])
-    dfmin = dfcat.groupby(level = index_names).min().dropna()
-
-    return dfmin
-
 

@@ -11,18 +11,7 @@
 import sys
 import pandas as pd
 import coevo.pdb_aux.attributes as attributes
-
-def load_scores(fn):
-    ''' Returns pandas.DataFrame indexed by first column
-
-        Column names defined in first row
-    
-    '''
-
-    df = pd.read_table(fn, header = 0, index_col = 0)
-
-    return df
-
+import coevo.tab_aux as tab_aux
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
@@ -32,6 +21,6 @@ if __name__ == "__main__":
     res_scores_fn = sys.argv[1]
     chain_id = sys.argv[2]
 
-    res_scores_df = load_scores(res_scores_fn)
+    res_scores_df = tab_aux.load_flattab(res_scores_fn)
 
     print attributes.make_chimera_attributes(res_scores_df, chain_id)

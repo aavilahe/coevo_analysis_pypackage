@@ -10,16 +10,16 @@
 
 import sys
 import pandas as pd
-import coevo.pdb_aux.distances as distances
+import coevo.tab_aux as tab_aux
 
 def load_dists(fn):
     ''' Returns pandas.DataFrame indexed by first and second column
         
-        Expects distances are in third column. Drops other columns
+        Expects distances in third column. Drops other columns
 
     '''
     
-    return distances.load_pairtab(fn).ix[:, :3]
+    return tab_aux.load_pairtab(fn).ix[:, :3]
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     df1 = load_dists(sys.argv[1])
     df2 = load_dists(sys.argv[2])
     
-    dfmin = distances.get_min_dists(df1, df2)
+    dfmin = tab_aux.get_min_dists(df1, df2)
     dfmin.to_csv(sys.stdout, header = True, index = True,
                  sep = '\t', float_format = '%.6f'
                  )
