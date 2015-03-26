@@ -7,11 +7,13 @@ from os import remove
 from subprocess import Popen, PIPE
 from StringIO import StringIO
 
-from Bio import AlignIO
+from Bio import Align, AlignIO
 from Bio.Align.Applications import MuscleCommandline
 from Bio.Emboss.Applications import NeedleCommandline
+from Bio.pairwise2 import align
+from Bio.SubsMat import MatrixInfo
 
-from .aux import make_tmp_fa
+from .aux import make_tmp_fa, ungap_SeqRecord
 
 
 def make_external_aligner(EX_ALN_CMD):
@@ -90,7 +92,7 @@ def profile_align_SeqRecord_to_fa(seqr, aln_fn, ex_aligner = muscle_profile_alig
 
     '''
 
-    tmp_fa = make_tmp_fa(seqr.format('fasta'))
+    tmp_fa = make_tmp_fa(seqr)
     exaln = ex_aligner(tmp_fa.name, aln_fn)
     remove(tmp_fa.name)
 
@@ -113,11 +115,11 @@ def pair_align_SeqRecords(seqr_a, seqr_b, ex_aligner = needle_align):
 
     if ex_aligner is None:
         inaln = align.globalds(ungap_SeqRecord(seqr_a), ungap_SeqRecord(seqr_b),
-                               MatrixInfo.Blosum62, -10.0, -0.5)
+                               MatrixInfo.blosum62, -10.0, -0.5)
         exaln = Align.MultipleSeqAlignment(inaln[0][:2])
     else:
-        tmp_fa = make_tmp_fa(ungap_SeqRecord(seqr_a).format('fasta'))
-        tmp_ref_fa = make_tmp_fa(ungap_SeqRecord(seqr_b).format('fasta'))
+        tmp_fa = make_tmp_fa(ungap_SeqRecord(seqr_a))
+        tmp_ref_fa = make_tmp_fa(ungap_SeqRecord(seqr_b))
         exaln = ex_aligner(tmp_fa.name, tmp_ref_fa.name)
         remove(tmp_fa.name)
         remove(tmp_ref_fa.name)
