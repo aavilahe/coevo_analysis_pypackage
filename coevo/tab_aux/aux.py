@@ -7,7 +7,7 @@ import pandas as pd
 
 def load_pairtab(fn):
     ''' Loads tab delimited file indexed by first two columns
-        
+
         Returns a pandas.DataFrame
 
     '''
@@ -36,6 +36,8 @@ def get_min_dists(df1, df2):
         pandas.concat() should work with multiple distance columns
                         but doesn't care about index names
 
+        Returns a pandas.DataFrame
+
     '''
 
     ## merge only works if there is a single distance column
@@ -48,6 +50,31 @@ def get_min_dists(df1, df2):
     dfmin = dfcat.groupby(level = index_names).min().dropna()
 
     return dfmin
+
+def load_map(fn, prefix = None):
+    ''' Loads column-to-resn map and adds prefix
+
+        fn: filename to load
+        prefix: typically 'Left' or 'Right', prepended to 'Column' and 'resn'
+
+        Assumes header is:
+            'Column\tresn[\textra_column...]'
+
+        Drops extra columns, resets indices set by load_pairtab()
+
+        Returns a pandas.DataFrame
+
+    '''
+
+    df = load_pairtab(fn).reset_index().ix[:, :2]
+
+    if prefix is not None:
+        df.rename(columns = {'resn': prefix + '_resn',
+                             'Column': prefix + '_Column'
+                             },
+                  inplace = True
+                  )
+    return df
 
 def convert_col(target_df, map_df, from_col, to_col):
     ''' Converts from_col to to_col in target_df using map_df

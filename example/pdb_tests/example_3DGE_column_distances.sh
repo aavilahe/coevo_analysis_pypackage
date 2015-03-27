@@ -27,19 +27,22 @@ python ${BIN}/map_column_to_resnum.py --user_aln ${CHAIN_R1} ${PDB} ${FA_R} > ${
 python ${BIN}/map_column_to_resnum.py --user_aln ${CHAIN_R2} ${PDB} ${FA_R} > ${MAPR2}
 
 # get resn-resn distances
-RDIST1="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R1}.Cb.res_dist"
-RDIST2="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R2}.Cb.res_dist"
+#RDIST1="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R1}.Cb.res_dist"
+#RDIST2="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R2}.Cb.res_dist"
 
-python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R1} --dist_atoms=Cb ${PDB} > ${RDIST1}
-python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R2} --dist_atoms=Cb ${PDB} > ${RDIST2}
+#python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R1} --dist_atoms=Cb ${PDB} > ${RDIST1}
+#python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R2} --dist_atoms=Cb ${PDB} > ${RDIST2}
 
-# convert resn to column
+# get col-col distances
 CDIST1="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R1}.Cb.col_dist"
 CDIST2="${PDB%.pdb*}.${CHAIN_L1}_${CHAIN_R2}.Cb.col_dist"
 
-python ${BIN}/convert_resnums_to_columns.py ${RDIST1} ${MAPL1} ${MAPR1} > ${CDIST1}
-python ${BIN}/convert_resnums_to_columns.py ${RDIST2} ${MAPL1} ${MAPR2} > ${CDIST2}
+python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R1} --mapL=${MAPL1} --mapR=${MAPR1} --dist_atoms=Cb ${PDB} > ${CDIST1}
+python ${BIN}/get_dists.py --chainL=${CHAIN_L1} --chainR=${CHAIN_R2} --mapL=${MAPL1} --mapR=${MAPR2} --dist_atoms=Cb ${PDB} > ${CDIST2}
 
+# convert resn to column
+#python ${BIN}/convert_resnums_to_columns.py ${RDIST1} ${MAPL1} ${MAPR1} > ${CDIST1}
+#python ${BIN}/convert_resnums_to_columns.py ${RDIST2} ${MAPL1} ${MAPR2} > ${CDIST2}
 
 # get min distance
 MDIST="${PDB%.pdb*}.Cb.mindist"
