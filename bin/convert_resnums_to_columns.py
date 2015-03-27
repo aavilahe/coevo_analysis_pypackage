@@ -8,21 +8,6 @@ import sys
 import pandas as pd
 import coevo.tab_aux as tab_aux
 
-def load_map(fn, left_or_right):
-    ''' Loads column-to-resn map and adds prefix
-
-        Drops extra columns, resets indices
-
-    '''
-
-    df = tab_aux.load_pairtab(fn).reset_index().ix[:, :2]
-    df.rename(columns = {'resn': left_or_right + '_resn',
-                         'Column': left_or_right + '_Column'
-                         },
-              inplace = True
-              )
-    return df
-
 def convert_resns(dist_df, leftmap_df, rightmap_df):
     ''' Converts resnum in dist_df to alignment column numbers
 
@@ -46,8 +31,8 @@ if __name__ == '__main__':
         sys.exit(1)
     
     dist_df = tab_aux.load_pairtab(sys.argv[1]).reset_index()    
-    lmap_df = load_map(sys.argv[2], 'Left')
-    rmap_df = load_map(sys.argv[3], 'Right')
+    lmap_df = tab_aux.load_map(sys.argv[2], 'Left')
+    rmap_df = tab_aux.load_map(sys.argv[3], 'Right')
 
     df = convert_resns(dist_df, lmap_df, rmap_df)
     df.to_csv(sys.stdout, header = True, index = True,
