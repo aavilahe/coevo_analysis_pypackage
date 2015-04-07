@@ -17,7 +17,7 @@ def make_strict_phylip_id_map(seqids):
 
     '''
 
-    return (((seqid, str(i) + '_' +  seqid)[:8].ljust(8) + '  ')
+    return ((seqid, (str(i) + '_' +  seqid)[:8].ljust(8) + '  ')
             for i, seqid
             in enumerate(seqids)
             )
