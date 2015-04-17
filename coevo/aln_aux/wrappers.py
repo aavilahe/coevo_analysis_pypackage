@@ -54,7 +54,7 @@ def muscle_profile_align(fa1, fa2):
 
     '''
 
-    muscle_cmd = MuscleCommandline(input = fa1, in2 = fa2,
+    muscle_cmd = MuscleCommandline(in1 = fa1, in2 = fa2,
                                    profile = True
                                    )
     exaln = AlignIO.read(StringIO(muscle_cmd()[0]), format = "fasta")
