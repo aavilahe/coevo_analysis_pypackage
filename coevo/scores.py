@@ -19,6 +19,7 @@ class Format:
         CoMap
         infCalc
         distance
+        CTMP
         tab    *formatted by coevo.scores.write_tab()
 
     '''
@@ -45,6 +46,8 @@ class Format:
             self._PSICOV_ini(suff)
         elif prog == 'infCalc':
             self._infCalc_ini(suff)
+        elif prog == 'CTMP':
+            self._CTMP_ini(suff)
         elif prog == 'CoMap':
             self._CoMap_ini(suff)
         elif prog == 'dist':
@@ -112,6 +115,18 @@ class Format:
         self.header = 0  # first line as header
         self.keep_cols = (0, 1, 2, 3, 4, 5, 6, 7, 8)
         self.stat_names = ('Left_Entropy', 'Right_Entropy', 'Joint_Entropy', 'MI', 'VI', 'MIminh', 'MIj')
+        self.stat_names = [ name + suff for name in self.stat_names ]
+
+    def _CTMP_ini(self, suff = ''):
+        ''' http://www.stat.sinica.edu.tw/chyeang/coevolution_download.zip
+
+        '''
+
+        self.offset = 1
+        self.delim = '\t'
+        self.header = 0  # first line as header
+        self.keep_cols = (0, 1, 2)
+        self.stat_names = ('CTMP',)
         self.stat_names = [ name + suff for name in self.stat_names ]
 
     def _CoMap_ini(self, suff = ''):
