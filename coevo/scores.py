@@ -20,6 +20,7 @@ class Format:
         infCalc
         distance
         CTMP
+        spider (SpiderMonkey from HyPhy package)
         tab    *formatted by coevo.scores.write_tab()
 
     '''
@@ -50,6 +51,8 @@ class Format:
             self._CTMP_ini(suff)
         elif prog == 'CoMap':
             self._CoMap_ini(suff)
+        elif prog == 'spider':
+            self._spider_ini(suff)
         elif prog == 'dist':
             self._distance_ini(suff)
         elif prog == 'tab':
@@ -142,6 +145,21 @@ class Format:
         self.stat_names = [ name + suff for name in self.stat_names ]
         # extract alignment positions from first column
         self.preproc = lambda df: pd.concat([df.ix[:, 0].str.extract('\[(\d+);(\d+)\]'), df.ix[:, 1:]], axis = 1) 
+
+    def _spider_ini(self, suff = ''):
+        ''' http://www.datamonkey.org/help/spidermonkey.php
+
+            https://github.com/veg/hyphy
+            https://github.com/veg/hyphy/issues/303
+
+        '''
+
+        self.offset = 0
+        self.delim = ','
+        self.header = None
+        self.keep_cols = (0, 1, 2)
+        self.stat_names = ('Spider',)
+        self.stat_names = [ name + suff for name in self.stat_names ]
 
     def _distance_ini(self, suff = ''):
         self.offset = 0
