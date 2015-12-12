@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-''' convert_resnums_to_columns.py -- Converts resnums in get_dists.py output
+''' convert_resnums_to_columns.py --- Converts resnums in get_dists.py output
+
+    Converts resnums (residue numbers) to corresponding alignment column
+    numbers obtained from `get_dists.py` output
 
 '''
 
@@ -12,7 +15,7 @@ def convert_resns(dist_df, leftmap_df, rightmap_df):
     ''' Converts resnum in dist_df to alignment column numbers
 
     '''
-    
+
     dist_dfm = tab_aux.convert_col(dist_df, leftmap_df,
                                    from_col = 'Left_resn',
                                    to_col = 'Left_Column'
@@ -29,8 +32,8 @@ if __name__ == '__main__':
     if len(sys.argv) < 4:
         print >>sys.stderr, 'usage: %s resn_dists left_map right_map > coln_dists' % sys.argv[0]
         sys.exit(1)
-    
-    dist_df = tab_aux.load_pairtab(sys.argv[1]).reset_index()    
+
+    dist_df = tab_aux.load_pairtab(sys.argv[1]).reset_index()
     lmap_df = tab_aux.load_map(sys.argv[2], 'Left')
     rmap_df = tab_aux.load_map(sys.argv[3], 'Right')
 
