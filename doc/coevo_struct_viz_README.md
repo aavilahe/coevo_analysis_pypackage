@@ -1,46 +1,34 @@
-# coevo_struct_viz
+# Sequence to structure
 
 These are scripts to help visualize alignment column
 scores and labels onto structures (PDB files).
 
+## `map_column_to_resnum.py`
 
-## Usage
-
-### `map_column_to_resnum.py`
-
-Use this to map alignment columns to resnums in a corresponding chain
-in a structural model. You can use the alignment or a sequence in the alignment as a reference.
+Use this to generate a map of alignment columns to residue numbers (resnums) in
+a corresponding chain in a structural model. You can use your alignment or a
+sequence in your alignment as a reference.
 
 ```bash
-$ ./map_column_to_resnum.py chain_id model.pdb aln.fa > col_resn_aa.tsv
+
+map_column_to_resnum.py chain_id model.pdb aln.fa > col_resn_aa.map
 
 ```
 
-Default profile aligner (for mapping to alignment) is `muscle`. Default pairwise global aligner
-is `needle` from Emboss.
+The default profile aligner (for mapping your structure to your alignment) is
+`muscle`.  The default pairwise global aligner is `needle` from Emboss.
 
-# map co-evolution scores to residues
-python make_attributes.py --LeftMap=ProtX_resnum_col.map Results.tab > ProtX_attributes.txt
+If you are brave, you can edit the source in `map_column_to_resnum.py` to
+specify a command that outputs an aligned fasta.
 
-### `map_column_to_resnum.py` ###
-#### *Mapping not optimal* ####
-*Mapping through reference sequence position removes insertions
-relative to reference from analysis, may not be desired* 
+## `make_attributes.py`
 
-Takes phylip alignment as input and generates
-3 mappings
+Loads map of alignment columns to residue numbers (resnums) and coevolution scores in a tabular
+format.
+Writes chimera readable attributes file, one attribute per score column.
 
-1. Column to reference sequence
-2. Reference sequence position to PDB chain sequence position
-3. PDB chain sequence position to PDB chain resnum
+```
 
-And prints a map of Column to PDB chain resnum
+python make_attributes.py --LeftMap=ProtX_col_resnum_aa.map Scores.tsv > ProtX_attributes.txt
 
-### `make_attributes.py` ###
-
-Loads map of Column to PDB chain resnum and tabular co-evolution results file.
-Writes chimera readable attributes file, one attribute per column (skips Alignment_Column columns).
-
-
-
-
+```
