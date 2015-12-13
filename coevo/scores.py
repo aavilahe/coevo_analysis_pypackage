@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' scores.py -- load and clean raw coevo scores from many programs
+''' scores.py -- DEPRECATED: load and clean raw coevo scores from many programs
 
     module: coevo
 

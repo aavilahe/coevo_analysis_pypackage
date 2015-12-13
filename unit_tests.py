@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' test coevo module
+''' DEPRECATED: test coevo scores module
 
 '''
 
@@ -28,7 +28,7 @@ for fn in fnlist:
     tabdf = cs.Format(prog = prog).load(fn)
     tabdf_dict[prog] = tabdf
     diag(tabdf, '%s : ' % fn)
-    
+
 for prog, df in tabdf_dict.iteritems():
     print "Dropping intraprotein in %s" % prog
     if prog != 'infCalc':
