@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' fasta_to_psicov.py -- Converts fasta to PSICOV format
+''' fasta_to_psicov.py --- Converts fasta to PSICOV input format
 
     - Removes sequence identifiers
     - PSICOV format: one sequence per line, no whitespace

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-''' make_attributes.py -- converts per-residue scores to chimera attributes
+''' make_attributes.py --- converts per-residue scores to chimera attributes
 
-    Input:
+    Converts scores for residues on a single chain to chimera attributes.
+
+    Input is:
     - Tab delimited
     - Indexed by the first column
     - First row is column headers
@@ -18,11 +20,11 @@ def parse_cmd_line(args):
     ''' Parse command line or config file for options and return a dict.
 
         Uses getopt for compatibility
-    
+
     '''
-    
+
     optlist, args = getopt.getopt(args, 'hc:m:',
-                                  [ 
+                                  [
                                    'help',
                                    'chain_id=',
                                    'map=',
@@ -30,13 +32,13 @@ def parse_cmd_line(args):
                                   )
     options = dict()
     usage = (
-             'usage: %s [ options ] scores_tab\n\n' 
+             'usage: %s [ options ] scores_tab\n\n'
              'Options:\n'
-             '\t-h, --help                    show this help message and exit\n' 
-             '\t-c, --chain_id <chain id>     specify single or chain id\n' 
+             '\t-h, --help                    show this help message and exit\n'
+             '\t-c, --chain_id <chain id>     specify single or chain id\n'
              '\t--map <resn2col>              specify a mapping from resnum to alignment columns for chain\n'
              ) % sys.argv[0]
-    
+
     # Assign options
     for opt, val in optlist:
         if opt in ('-h', '--help'):
@@ -55,7 +57,7 @@ def parse_cmd_line(args):
         err = 'Error: specify a tab delimited file containing scores'
         sys.exit(err + '\n' + usage)
     options['scores_tab'] = args[0]
-    
+
     return options
 
 if __name__ == "__main__":

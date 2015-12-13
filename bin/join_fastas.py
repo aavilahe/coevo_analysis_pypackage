@@ -1,7 +1,9 @@
 #!/usr/bin/env python
-''' concatenate_fastas.py -- concatenates two fastas horizontally
+''' concatenate_fastas.py --- concatenates two fastas horizontally
 
-    - Sequence identifiers must be exact and unique within each fasta
+    Concatenates two fasta files horizontally.
+
+    - ! Sequence identifiers must be exact and unique within each fasta
     - Writes to stdout
 
 '''
@@ -12,7 +14,7 @@ from Bio import AlignIO, SeqIO
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         sys.exit('usage: %s left.fa right.fa > left_right.fa' % sys.argv[0])
-        
+
     left_aln = AlignIO.read(sys.argv[1], format = "fasta")
     right_aln = SeqIO.to_dict(AlignIO.read(sys.argv[2], format = "fasta"))
 

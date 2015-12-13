@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-''' fasta_to_phy.py -- Converts fasta to strict phylip
+''' fasta_to_phy.py --- Converts fasta to strict phylip
 
-    - Truncates sequence identifiers to 8 characters.
-    - Leaves two spaces between identifier and sequence, each sequence on its
-      own line.
+    - Truncates sequence identifiers to 8 characters
+    - Leaves two spaces between identifier and sequence
+    - Each sequence is on its own line
     - Acts as a filter (stdin, stdout)
 
 '''

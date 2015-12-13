@@ -1,12 +1,18 @@
 #!/usr/bin/env python
 ''' get_dists.py -- Gets intra- or interchain residue-residue distances
 
-    User can specify distance type:
-    - beta carbon (default)
-    - nearest non-hydrogen atom
-    - nearest atom
+    Gets intrachain or interchain residue-residue distance from PDB
+    formatted structure.
 
-    Outputs resnums, resnames, distances
+    User can specify how to measure distance between residues:
+    - Use beta carbons (default)
+    - Use nearest non-hydrogen atoms
+    - Use nearest atoms
+
+    Outputs
+    - resnums (residue numbers)
+    - resnames (single letter residue names)
+    - distances (in Angstroms)
 
     Can output alignment columns if mappings from resnums to alignment columns
     are specified

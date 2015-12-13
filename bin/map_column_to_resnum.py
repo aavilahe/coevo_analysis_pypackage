@@ -1,7 +1,12 @@
 #!/usr/bin/env python
-''' map_column_to_resnum.py -- map alignment column to resnum in pdb chain
+''' map_column_to_resnum.py --- map alignment column to resnum in PDB chain
 
-    Example: chain A in 3DGE starts at 246, but alignment covers discontinuous domains
+    Creates a mapping from alignment column numberings to residue numbers (resnums)
+    in a specified PDB chain.
+
+    Example: chain A in 3DGE starts at resnum 246, but a corresponding
+    alignment may cover discontinuous domains starting in an arbitrary
+    position in the reference sequence.
 
 '''
 
@@ -16,7 +21,9 @@ import coevo.aln_aux.wrappers as aln_wraps
 
 __author__ = "Aram Avila-Herrera"
 
-PROFILE_ALIGNER_CMD = 'fmuscle -profile -in1 %s -in2 %s -out /dev/stdout'
+# User may change these to run custom aligners.
+# Probably insecure as it runs a user-specified commmand!
+PROFILE_ALIGNER_CMD = 'muscle -profile -in1 %s -in2 %s -out /dev/stdout'
 PAIR_ALIGNER_CMD = 'needle -auto -asequence %s -bsequence %s -stdout -aformat3 fasta'
 
 def parse_cmd_line(args):
